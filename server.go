@@ -47,6 +47,7 @@ func (s *Server) Run() {
 	}
 	defer l.Close()
 	s.workerPool.RegisterHandlers(s.handlers)
+	s.workerPool.FireWorkers()
 
 	for {
 		conn, err := l.Accept()

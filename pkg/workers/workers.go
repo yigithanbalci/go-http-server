@@ -7,6 +7,8 @@ import (
 
 	"github.com/yigithanbalci/go-http-server/pkg/core/method"
 	"github.com/yigithanbalci/go-http-server/pkg/core/request"
+	"github.com/yigithanbalci/go-http-server/pkg/core/response"
+	"github.com/yigithanbalci/go-http-server/pkg/core/status"
 	"github.com/yigithanbalci/go-http-server/pkg/handler"
 )
 
@@ -86,6 +88,16 @@ func handleConn(c net.Conn, handlers map[handler.HandlerConfig]handler.HandlerFu
 		M:    method.Method(req.Method),
 		Path: req.Path,
 	}
-	f := handlers[conf]
-	f(req)
+	f, ok := handlers[conf]
+	resp := &response.Response{
+		HttpVer: req.HttpVer,
+		Status:  status.NOT_FOUND,
+	}
+	if ok {
+		resp = f(req)
+	}
+	err = writeToConn(c, response.ParseResp(resp))
+	if err != nil {
+		log.Printf("Error occured writing to conn: %+v", err)
+	}
 }
