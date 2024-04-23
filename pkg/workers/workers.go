@@ -1,7 +1,6 @@
 package workers
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"runtime"
@@ -49,10 +48,8 @@ func readFromConn(r net.Conn) ([]byte, error) {
 }
 
 func writeToConn(w net.Conn, msg []byte) error {
-	n, err := w.Write(msg)
+	_, err := w.Write(msg)
 	if err != nil {
-		fmt.Println(n)
-		fmt.Println("err: ", err)
 		return err
 	}
 
@@ -67,32 +64,4 @@ func handleConn(c net.Conn) {
 	}
 
 	req := request.ParseReq(reqRaw)
-	// var bytesMsg []byte
-	// re := response.Response{
-	// 	HttpVer:       req.HttpVer,
-	// 	Status:        "404 NOT FOUND",
-	// 	ContentType:   "",
-	// 	ContentLength: "",
-	// 	Body:          "",
-	// }
-
-	// if strings.Contains(req.path, "/echo") {
-	// 	echoHandler(req, &re)
-	// }
-	// if req.path == "/" {
-	// 	baseHandler(&re)
-	// }
-	// if req.path == "/user-agent" {
-	// 	userAgentHandler(req, &re)
-	// }
-	// if strings.Contains(req.path, "/files") {
-	// 	fileHandler(req, &re)
-	// }
-	// bytesMsg = parseResp(&re)
-	// fmt.Println("msg:", string(bytesMsg))
-	// err = writeToConn(c, bytesMsg)
-	// fmt.Println("written")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
 }
