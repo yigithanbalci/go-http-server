@@ -14,7 +14,7 @@ type Response struct {
 	Body          string
 }
 
-func parseResp(re *Response) []byte {
+func ParseResp(re *Response) []byte {
 	respStr := re.HttpVer + " "
 	respStr = respStr + re.Status + core.Separator
 	if re.ContentType != "" {
