@@ -5,34 +5,52 @@ import (
 	"net"
 	"runtime"
 
-	"github.com/yigithanbalci/go-http-server/pkg/request"
+	"github.com/yigithanbalci/go-http-server/pkg/core/method"
+	"github.com/yigithanbalci/go-http-server/pkg/core/request"
+	"github.com/yigithanbalci/go-http-server/pkg/handler"
 )
-
-func init() {
-	go fireWorkers()
-}
 
 type job struct {
 	c net.Conn
 }
 
-var jobs = make(chan *job, runtime.NumCPU()*2)
+type WorkerPool struct {
+	jobs     chan *job
+	handlers map[handler.HandlerConfig]handler.HandlerFunc
+}
 
-func QueueConn(c net.Conn) {
-	jobs <- &job{
+func NewPool() *WorkerPool {
+	return NewPoolWithSize(0)
+}
+
+func NewPoolWithSize(size int) *WorkerPool {
+	if size == 0 {
+		size = runtime.NumCPU() * 2
+	}
+	return &WorkerPool{
+		jobs: make(chan *job, size),
+	}
+}
+
+func (p *WorkerPool) RegisterHandlers(handlers map[handler.HandlerConfig]handler.HandlerFunc) {
+	p.handlers = handlers
+}
+
+func (p *WorkerPool) QueueConn(c net.Conn) {
+	p.jobs <- &job{
 		c: c,
 	}
 }
 
-func fireWorkers() {
+func (p *WorkerPool) FireWorkers() {
 	for i := 1; i < runtime.NumCPU()*2; i++ {
-		go worker(jobs)
+		go worker(p.jobs, p.handlers)
 	}
 }
 
-func worker(jobs <-chan *job) {
+func worker(jobs <-chan *job, handlers map[handler.HandlerConfig]handler.HandlerFunc) {
 	for j := range jobs {
-		handleConn(j.c)
+		handleConn(j.c, handlers)
 	}
 }
 
@@ -56,7 +74,7 @@ func writeToConn(w net.Conn, msg []byte) error {
 	return nil
 }
 
-func handleConn(c net.Conn) {
+func handleConn(c net.Conn, handlers map[handler.HandlerConfig]handler.HandlerFunc) {
 	defer c.Close()
 	reqRaw, err := readFromConn(c)
 	if err != nil {
@@ -64,4 +82,10 @@ func handleConn(c net.Conn) {
 	}
 
 	req := request.ParseReq(reqRaw)
+	conf := handler.HandlerConfig{
+		M:    method.Method(req.Method),
+		Path: req.Path,
+	}
+	f := handlers[conf]
+	f(req)
 }

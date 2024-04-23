@@ -15,7 +15,7 @@ type Request struct {
 	Body          string
 }
 
-func parseReq(msg []byte) *Request {
+func ParseReq(msg []byte) *Request {
 	smsg := string(msg)
 	contents := strings.Split(smsg, consts.Separator)
 	request := &Request{
